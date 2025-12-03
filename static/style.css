@@ -1,0 +1,116 @@
+/* body {
+    background: linear-gradient(to right, #f1f8ff, #d9eafa);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.4rem;
+}
+
+.container {
+    margin-top: 40px;
+}
+
+.form-container {
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+}
+
+.form-group label {
+    font-weight: 600;
+    color: #333;
+}
+
+.btn-primary {
+    font-size: 18px;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.result {
+    margin-top: 25px;
+    padding: 30px;
+    background: #e9f7ef;
+    border-left: 6px solid #28a745;
+    border-radius: 12px;
+}
+
+.result h2 {
+    margin-bottom: 10px;
+} */
+
+
+/* 🌙 Light/Dark mode bases */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    transition: background-color .4s, color .4s;
+}
+
+.light-mode {
+    background: linear-gradient(to right, #f1f8ff, #d9eafa);
+    color: #111;
+}
+
+.dark-mode {
+    background: #1a1d21;
+    color: #f1f1f1;
+}
+
+/* 🟥 Navbar */
+.navbar-brand img {
+    height: 30px;
+    margin-right: 8px;
+}
+
+/* 🧾 Card styling */
+.form-container {
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+}
+
+.dark-mode .form-container {
+    background: #222;
+    box-shadow: 0 8px 25px rgba(255, 255, 255, 0.05);
+}
+
+.result {
+    margin-top: 25px;
+    padding: 30px;
+    border-radius: 12px;
+    font-size: 18px;
+}
+
+/* Dynamic results */
+.result.good {
+    background: #e8f9e8;
+    border-left: 6px solid #28a745;
+}
+
+.result.bad {
+    background: #ffeaea;
+    border-left: 6px solid #dc3545;
+}
+
+/* 🔥 Button animation */
+.btn-primary {
+    font-size: 18px;
+    padding: 10px;
+    border-radius: 8px;
+    transition: 0.3s;
+}
+
+.btn-primary:hover {
+    transform: scale(1.04);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, .3);
+}
+
+/* 🌙 Dark mode button */
+#modeToggle {
+    cursor: pointer;
+    font-weight: 600;
+}
