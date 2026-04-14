@@ -1,0 +1,455 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heart Disease Detection Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body data-theme="{{ settings.themePreference }}" data-accent="{{ settings.accentStyle }}" class="{% if settings.compactMode == '1' %}compact-mode{% endif %}">
+    <div class="page-shell">
+        <header class="topbar">
+            <div class="brand-block">
+                <a class="brand" href="{{ url_for('index') }}">
+                    <img src="{{ url_for('static', filename='logo.png') }}" alt="Heart Predictor logo">
+                    <span>
+                        <strong>Heart Predictor Pro</strong>
+                        <small>Clinical screening dashboard</small>
+                    </span>
+                </a>
+                <div class="topbar-copy">
+                    <p>{{ settings.facilityName }}</p>
+                    <span>Configured by {{ settings.clinicianName }}</span>
+                </div>
+            </div>
+            <div class="topbar-actions">
+                <button type="button" class="btn ghost" id="themeCycleBtn">Theme</button>
+                <button type="button" class="btn secondary" id="settingsToggle">Settings</button>
+            </div>
+        </header>
+
+        <form id="riskForm" method="post" class="dashboard-form">
+            <section class="hero-panel panel">
+                <div class="hero-copy">
+                    <span class="eyebrow">Advanced project upgrade</span>
+                    <h1>Modern heart disease detection workspace with configurable analytics and downloadable reports.</h1>
+                    <p>
+                        Review patient vitals, tune dashboard behaviour, compare against dataset benchmarks,
+                        and export a professionally formatted report with the patient name and real-time date.
+                    </p>
+                    <div class="hero-tags">
+                        <span>Alert threshold: {{ settings.riskThreshold }}%</span>
+                        <span>Dataset records: {{ dashboard.records }}</span>
+                        <span>Updated: {{ generated_now }}</span>
+                    </div>
+                </div>
+                <div class="hero-actions">
+                    <button class="btn primary" formaction="{{ url_for('predict_route') }}" formmethod="post">Run Screening</button>
+                    <button class="btn ghost" type="button" onclick="window.location.href='{{ url_for('index') }}'">Reset Form</button>
+                    {% if result %}
+                    <button class="btn secondary" formaction="{{ url_for('report_route') }}" formmethod="post">Download Report</button>
+                    {% else %}
+                    <button class="btn secondary" type="button" onclick="document.getElementById('patientName').focus()">Start with Patient Details</button>
+                    {% endif %}
+                </div>
+            </section>
+
+            {% if settings_status == 'saved' %}
+            <div class="message success">Dashboard settings were saved for this session.</div>
+            {% elif settings_status == 'reset' %}
+            <div class="message info">Dashboard settings were reset to the default clinical view.</div>
+            {% endif %}
+
+            {% if error %}
+            <div class="message danger">{{ error }}</div>
+            {% endif %}
+
+            {% if settings.showDatasetSummary == '1' %}
+            <section class="summary-grid">
+                <article class="summary-card panel">
+                    <span class="summary-label">Dataset Size</span>
+                    <strong>{{ dashboard.records }}</strong>
+                    <small>Framingham samples available for reference</small>
+                </article>
+                <article class="summary-card panel">
+                    <span class="summary-label">Positive Rate</span>
+                    <strong>{{ dashboard.positive_rate }}%</strong>
+                    <small>Ten-year CHD cases in the dataset</small>
+                </article>
+                <article class="summary-card panel">
+                    <span class="summary-label">Average Systolic BP</span>
+                    <strong>{{ dashboard.avg_sysbp }}</strong>
+                    <small>Population benchmark in mmHg</small>
+                </article>
+                <article class="summary-card panel">
+                    <span class="summary-label">Smoker Rate</span>
+                    <strong>{{ dashboard.smoker_rate }}%</strong>
+                    <small>Participants with active smoking history</small>
+                </article>
+            </section>
+            {% endif %}
+
+            <div class="workspace-grid">
+                <div class="input-column">
+                    <section class="panel">
+                        <div class="panel-head">
+                            <div>
+                                <span class="eyebrow">Patient intake</span>
+                                <h2>Identity and baseline profile</h2>
+                            </div>
+                            <span class="panel-note">Required for prediction and report export</span>
+                        </div>
+                        <div class="form-grid two-col">
+                            <label>
+                                <span>Patient Name</span>
+                                <input id="patientName" type="text" name="patientName" placeholder="Enter patient full name" value="{{ form_values.patientName }}" required>
+                            </label>
+                            <label>
+                                <span>Gender</span>
+                                <select name="male">
+                                    <option value="1" {% if form_values.male|string == '1' %}selected{% endif %}>Male</option>
+                                    <option value="0" {% if form_values.male|string == '0' %}selected{% endif %}>Female</option>
+                                </select>
+                            </label>
+                            <label>
+                                <span>Age</span>
+                                <input type="number" name="age" min="1" max="120" value="{{ form_values.age }}" required>
+                            </label>
+                            <label>
+                                <span>Heart Rate</span>
+                                <input type="number" name="heartRate" min="1" value="{{ form_values.heartRate }}" required>
+                            </label>
+                        </div>
+                    </section>
+
+                    <section class="panel">
+                        <div class="panel-head">
+                            <div>
+                                <span class="eyebrow">Lifestyle and history</span>
+                                <h2>Behavioral and medical risk factors</h2>
+                            </div>
+                            <span class="panel-note">These inputs feed the trained model</span>
+                        </div>
+                        <div class="form-grid three-col">
+                            <label>
+                                <span>Current Smoker</span>
+                                <select name="currentSmoker">
+                                    <option value="1" {% if form_values.currentSmoker|string == '1' %}selected{% endif %}>Yes</option>
+                                    <option value="0" {% if form_values.currentSmoker|string == '0' %}selected{% endif %}>No</option>
+                                </select>
+                            </label>
+                            <label>
+                                <span>Cigarettes / Day</span>
+                                <input type="number" name="cigsPerDay" min="0" value="{{ form_values.cigsPerDay }}" required>
+                            </label>
+                            <label>
+                                <span>BP Medication</span>
+                                <select name="BPMeds">
+                                    <option value="1" {% if form_values.BPMeds|string == '1' %}selected{% endif %}>Yes</option>
+                                    <option value="0" {% if form_values.BPMeds|string == '0' %}selected{% endif %}>No</option>
+                                </select>
+                            </label>
+                            <label>
+                                <span>Stroke History</span>
+                                <select name="prevalentStroke">
+                                    <option value="1" {% if form_values.prevalentStroke|string == '1' %}selected{% endif %}>Yes</option>
+                                    <option value="0" {% if form_values.prevalentStroke|string == '0' %}selected{% endif %}>No</option>
+                                </select>
+                            </label>
+                            <label>
+                                <span>Hypertension</span>
+                                <select name="prevalentHyp">
+                                    <option value="1" {% if form_values.prevalentHyp|string == '1' %}selected{% endif %}>Yes</option>
+                                    <option value="0" {% if form_values.prevalentHyp|string == '0' %}selected{% endif %}>No</option>
+                                </select>
+                            </label>
+                            <label>
+                                <span>Diabetes</span>
+                                <select name="diabetes">
+                                    <option value="1" {% if form_values.diabetes|string == '1' %}selected{% endif %}>Yes</option>
+                                    <option value="0" {% if form_values.diabetes|string == '0' %}selected{% endif %}>No</option>
+                                </select>
+                            </label>
+                        </div>
+                    </section>
+
+                    <section class="panel">
+                        <div class="panel-head">
+                            <div>
+                                <span class="eyebrow">Biomarkers</span>
+                                <h2>Clinical measurements</h2>
+                            </div>
+                            <span class="panel-note">Use the most recent verified values</span>
+                        </div>
+                        <div class="form-grid three-col">
+                            <label>
+                                <span>Total Cholesterol</span>
+                                <input type="number" name="totChol" min="0" value="{{ form_values.totChol }}" required>
+                            </label>
+                            <label>
+                                <span>Systolic BP</span>
+                                <input type="number" name="sysBP" min="0" value="{{ form_values.sysBP }}" required>
+                            </label>
+                            <label>
+                                <span>Diastolic BP</span>
+                                <input type="number" name="diaBP" min="0" value="{{ form_values.diaBP }}" required>
+                            </label>
+                            <label>
+                                <span>BMI</span>
+                                <input type="number" name="BMI" step="0.1" min="0" value="{{ form_values.BMI }}" required>
+                            </label>
+                            <label>
+                                <span>Glucose</span>
+                                <input type="number" name="glucose" min="0" value="{{ form_values.glucose }}" required>
+                            </label>
+                        </div>
+                    </section>
+                </div>
+
+                <aside class="sidebar-column">
+                    <section class="panel result-panel {{ result.status_class if result else 'idle' }}">
+                        <div class="panel-head">
+                            <div>
+                                <span class="eyebrow">Prediction console</span>
+                                <h2>Risk summary</h2>
+                            </div>
+                            {% if result %}
+                            <span class="status-pill {{ result.status_class }}">{{ result.risk_status }}</span>
+                            {% else %}
+                            <span class="status-pill idle">Awaiting input</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="result-gauge" style="--gauge-value: {{ result.probability if result else 0 }};">
+                            <div class="gauge-ring">
+                                <div class="gauge-inner">
+                                    <strong>{{ '%.2f'|format(result.probability) if result else '0.00' }}%</strong>
+                                    <span>Estimated 10-year risk</span>
+                                </div>
+                            </div>
+                            <div class="gauge-meta">
+                                <div>
+                                    <span>Alert Threshold</span>
+                                    <strong>{{ settings.riskThreshold }}%</strong>
+                                </div>
+                                <div>
+                                    <span>Priority</span>
+                                    <strong>{{ result.priority_level if result else 'Not generated' }}</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if result %}
+                        <div class="result-details">
+                            <article>
+                                <span>Patient</span>
+                                <strong>{{ form_values.patientName }}</strong>
+                            </article>
+                            <article>
+                                <span>Health Score</span>
+                                <strong>{{ result.health_score }}/100</strong>
+                            </article>
+                            <article>
+                                <span>Care Window</span>
+                                <strong>{{ result.care_window }}</strong>
+                            </article>
+                            <article>
+                                <span>Next Review</span>
+                                <strong>{{ result.follow_up_window }}</strong>
+                            </article>
+                        </div>
+                        <p class="result-summary">{{ result.summary }}</p>
+                        <div class="action-stack">
+                            <button class="btn primary" formaction="{{ url_for('predict_route') }}" formmethod="post">Refresh Prediction</button>
+                            <button class="btn secondary" formaction="{{ url_for('report_route') }}" formmethod="post">Download Report</button>
+                        </div>
+                        <small class="muted">Generated on {{ result.generated_at }}</small>
+                        {% else %}
+                        <div class="empty-state">
+                            <h3>Ready for advanced screening</h3>
+                            <p>
+                                Run a prediction to unlock benchmark comparisons, clinical observations,
+                                recommendations, and the downloadable report.
+                            </p>
+                        </div>
+                        {% endif %}
+                    </section>
+
+                    <section class="panel settings-panel" id="settingsPanel">
+                        <div class="panel-head">
+                            <div>
+                                <span class="eyebrow">Dashboard settings</span>
+                                <h2>Manage layout, reporting, and behaviour</h2>
+                            </div>
+                            <span class="panel-note">Session-based configuration</span>
+                        </div>
+
+                        <div class="form-grid two-col compact">
+                            <label>
+                                <span>Facility Name</span>
+                                <input type="text" name="facilityName" value="{{ settings.facilityName }}">
+                            </label>
+                            <label>
+                                <span>Clinician Name</span>
+                                <input type="text" name="clinicianName" value="{{ settings.clinicianName }}">
+                            </label>
+                            <label>
+                                <span>Alert Threshold (%)</span>
+                                <input type="number" id="riskThreshold" name="riskThreshold" min="5" max="95" value="{{ settings.riskThreshold }}">
+                            </label>
+                            <label>
+                                <span>Theme</span>
+                                <select name="themePreference" id="themePreference">
+                                    <option value="system" {% if settings.themePreference == 'system' %}selected{% endif %}>System</option>
+                                    <option value="light" {% if settings.themePreference == 'light' %}selected{% endif %}>Light</option>
+                                    <option value="dark" {% if settings.themePreference == 'dark' %}selected{% endif %}>Dark</option>
+                                </select>
+                            </label>
+                            <label>
+                                <span>Accent Style</span>
+                                <select name="accentStyle" id="accentStyle">
+                                    <option value="teal" {% if settings.accentStyle == 'teal' %}selected{% endif %}>Teal</option>
+                                    <option value="navy" {% if settings.accentStyle == 'navy' %}selected{% endif %}>Navy</option>
+                                    <option value="rose" {% if settings.accentStyle == 'rose' %}selected{% endif %}>Rose</option>
+                                </select>
+                            </label>
+                            <label class="full-span">
+                                <span>Report Notes</span>
+                                <textarea name="reportNotes" rows="4">{{ settings.reportNotes }}</textarea>
+                            </label>
+                        </div>
+
+                        <div class="toggle-grid">
+                            <label class="toggle-card">
+                                <input type="checkbox" name="showDatasetSummary" {% if settings.showDatasetSummary == '1' %}checked{% endif %}>
+                                <span>Show dataset summary</span>
+                            </label>
+                            <label class="toggle-card">
+                                <input type="checkbox" name="showBenchmarkPanel" {% if settings.showBenchmarkPanel == '1' %}checked{% endif %}>
+                                <span>Show benchmark panel</span>
+                            </label>
+                            <label class="toggle-card">
+                                <input type="checkbox" name="showRecommendationPanel" {% if settings.showRecommendationPanel == '1' %}checked{% endif %}>
+                                <span>Show recommendations</span>
+                            </label>
+                            <label class="toggle-card">
+                                <input type="checkbox" name="showChecklistPanel" {% if settings.showChecklistPanel == '1' %}checked{% endif %}>
+                                <span>Show checklist</span>
+                            </label>
+                            <label class="toggle-card full-span">
+                                <input type="checkbox" id="compactMode" name="compactMode" {% if settings.compactMode == '1' %}checked{% endif %}>
+                                <span>Use compact dashboard spacing</span>
+                            </label>
+                        </div>
+
+                        <div class="action-stack inline-actions">
+                            <button class="btn secondary" formaction="{{ url_for('settings_route') }}" formmethod="post" formnovalidate>Save Settings</button>
+                            <button class="btn ghost" formaction="{{ url_for('settings_reset_route') }}" formmethod="post" formnovalidate>Reset Settings</button>
+                        </div>
+                    </section>
+                </aside>
+            </div>
+
+            {% if result and insights %}
+            <section class="insights-grid">
+                <article class="panel insight-panel wide">
+                    <div class="panel-head">
+                        <div>
+                            <span class="eyebrow">Clinical observations</span>
+                            <h2>What stands out in this screening</h2>
+                        </div>
+                    </div>
+                    <div class="observation-list">
+                        {% for item in insights.observations %}
+                        <article class="observation-card {{ item.level }}">
+                            <strong>{{ item.title }}</strong>
+                            <p>{{ item.detail }}</p>
+                        </article>
+                        {% endfor %}
+                    </div>
+                </article>
+
+                <article class="panel insight-panel">
+                    <div class="panel-head">
+                        <div>
+                            <span class="eyebrow">Vitals board</span>
+                            <h2>Current measurement snapshot</h2>
+                        </div>
+                    </div>
+                    <div class="vital-list">
+                        {% for vital in insights.vitals %}
+                        <article class="vital-card">
+                            <span>{{ vital.label }}</span>
+                            <strong>{{ vital.value }}</strong>
+                            <small>{{ vital.status }}</small>
+                        </article>
+                        {% endfor %}
+                    </div>
+                </article>
+
+                {% if settings.showBenchmarkPanel == '1' %}
+                <article class="panel insight-panel wide">
+                    <div class="panel-head">
+                        <div>
+                            <span class="eyebrow">Dataset benchmarks</span>
+                            <h2>How this patient compares with the reference dataset</h2>
+                        </div>
+                    </div>
+                    <div class="benchmark-grid">
+                        {% for benchmark in insights.benchmarks %}
+                        <article class="benchmark-card">
+                            <span>{{ benchmark.label }}</span>
+                            <strong>{{ benchmark.patient_value }} {{ benchmark.unit }}</strong>
+                            <p>
+                                {{ benchmark.difference }} {{ benchmark.unit }} {{ benchmark.direction }}
+                                dataset average of {{ benchmark.average }} {{ benchmark.unit }}
+                            </p>
+                            <small>{{ benchmark.percentile }}th percentile within dataset</small>
+                        </article>
+                        {% endfor %}
+                    </div>
+                </article>
+                {% endif %}
+
+                {% if settings.showRecommendationPanel == '1' %}
+                <article class="panel insight-panel">
+                    <div class="panel-head">
+                        <div>
+                            <span class="eyebrow">Recommended next steps</span>
+                            <h2>Suggested follow-up actions</h2>
+                        </div>
+                    </div>
+                    <ul class="list-block">
+                        {% for item in insights.recommendations %}
+                        <li>{{ item }}</li>
+                        {% endfor %}
+                    </ul>
+                </article>
+                {% endif %}
+
+                {% if settings.showChecklistPanel == '1' %}
+                <article class="panel insight-panel">
+                    <div class="panel-head">
+                        <div>
+                            <span class="eyebrow">Monitoring checklist</span>
+                            <h2>Operational follow-up tracker</h2>
+                        </div>
+                    </div>
+                    <div class="checklist">
+                        {% for item in insights.checklist %}
+                        <article class="check-item {{ item.status }}">
+                            <strong>{{ item.label }}</strong>
+                            <span>{{ item.status|replace('_', ' ')|title }}</span>
+                        </article>
+                        {% endfor %}
+                    </div>
+                </article>
+                {% endif %}
+            </section>
+            {% endif %}
+        </form>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

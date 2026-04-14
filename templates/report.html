@@ -1,0 +1,354 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heart Risk Report - {{ patient_values.patientName }}</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --ink: #13212f;
+            --muted: #5f7386;
+            --line: #d8e2ec;
+            --surface: #f7fafc;
+            --accent: #0f766e;
+            --accent-soft: #ddf5ef;
+            --danger: #b42318;
+            --danger-soft: #fde8e7;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 32px;
+            background: #eef3f7;
+            color: var(--ink);
+            font-family: "Aptos", "Segoe UI", Tahoma, sans-serif;
+        }
+
+        .report-shell {
+            max-width: 960px;
+            margin: 0 auto;
+            background: #ffffff;
+            border: 1px solid var(--line);
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+        }
+
+        .report-header {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            padding: 32px;
+            background: linear-gradient(135deg, #0f172a, #134e4a 65%, #14b8a6);
+            color: #f8fffe;
+        }
+
+        .report-header h1 {
+            margin: 10px 0 8px;
+            font-size: 32px;
+            line-height: 1.15;
+        }
+
+        .report-header p,
+        .report-header span {
+            margin: 0;
+            color: rgba(248, 255, 254, 0.84);
+        }
+
+        .report-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.14);
+            font-size: 12px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .report-score {
+            padding: 24px;
+            border-radius: 24px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            text-align: right;
+        }
+
+        .report-score strong {
+            display: block;
+            font-size: 42px;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        .report-content {
+            padding: 32px;
+            display: grid;
+            gap: 24px;
+        }
+
+        .section {
+            border: 1px solid var(--line);
+            border-radius: 22px;
+            padding: 24px;
+            background: var(--surface);
+        }
+
+        .section h2 {
+            margin: 0 0 16px;
+            font-size: 20px;
+        }
+
+        .meta-grid,
+        .card-grid,
+        .metric-grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .meta-grid {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .metric-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .card-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .meta-card,
+        .metric-card,
+        .observation-card,
+        .benchmark-card {
+            background: #ffffff;
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 18px;
+        }
+
+        .meta-card span,
+        .metric-card span,
+        .benchmark-card span {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .meta-card strong,
+        .metric-card strong,
+        .benchmark-card strong {
+            font-size: 18px;
+        }
+
+        .summary-box {
+            padding: 20px;
+            border-radius: 18px;
+            background: {% if result.status_class == 'high' %}var(--danger-soft){% else %}var(--accent-soft){% endif %};
+            color: {% if result.status_class == 'high' %}var(--danger){% else %}var(--accent){% endif %};
+            border: 1px solid {% if result.status_class == 'high' %}rgba(180, 35, 24, 0.14){% else %}rgba(15, 118, 110, 0.18){% endif %};
+        }
+
+        .summary-box strong {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 22px;
+        }
+
+        .observation-list,
+        .list-block {
+            display: grid;
+            gap: 14px;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+
+        .observation-card strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .observation-card p,
+        .section p,
+        .list-block li {
+            margin: 0;
+            color: var(--ink);
+            line-height: 1.55;
+        }
+
+        .report-footer {
+            padding: 0 32px 32px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        @media print {
+            body {
+                background: #ffffff;
+                padding: 0;
+            }
+
+            .report-shell {
+                box-shadow: none;
+                border-radius: 0;
+                border: none;
+            }
+        }
+
+        @media (max-width: 780px) {
+            body {
+                padding: 16px;
+            }
+
+            .report-header,
+            .meta-grid,
+            .metric-grid,
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="report-shell">
+        <header class="report-header">
+            <div>
+                <span class="report-badge">Heart Disease Detection Report</span>
+                <h1>{{ patient_values.patientName }}</h1>
+                <p>{{ settings.facilityName }}</p>
+                <p>Reviewed by {{ settings.clinicianName }}</p>
+                <p>Generated on {{ generated_now }}</p>
+            </div>
+            <div class="report-score">
+                <span>Estimated 10-year risk</span>
+                <strong>{{ '%.2f'|format(result.probability) }}%</strong>
+                <p>{{ result.risk_status }}</p>
+                <p>{{ result.priority_level }}</p>
+            </div>
+        </header>
+
+        <main class="report-content">
+            <section class="section">
+                <h2>Executive Summary</h2>
+                <div class="summary-box">
+                    <strong>{{ result.risk_status }}</strong>
+                    <p>{{ result.summary }}</p>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2>Report Metadata</h2>
+                <div class="meta-grid">
+                    <article class="meta-card">
+                        <span>Patient Name</span>
+                        <strong>{{ patient_values.patientName }}</strong>
+                    </article>
+                    <article class="meta-card">
+                        <span>Gender</span>
+                        <strong>{{ patient_values.male_label }}</strong>
+                    </article>
+                    <article class="meta-card">
+                        <span>Age</span>
+                        <strong>{{ patient_values.age }}</strong>
+                    </article>
+                    <article class="meta-card">
+                        <span>Generated At</span>
+                        <strong>{{ result.report_generated_at }}</strong>
+                    </article>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2>Risk Metrics</h2>
+                <div class="metric-grid">
+                    <article class="metric-card">
+                        <span>Alert Threshold</span>
+                        <strong>{{ result.threshold }}%</strong>
+                    </article>
+                    <article class="metric-card">
+                        <span>Priority Level</span>
+                        <strong>{{ result.priority_level }}</strong>
+                    </article>
+                    <article class="metric-card">
+                        <span>Health Score</span>
+                        <strong>{{ result.health_score }}/100</strong>
+                    </article>
+                    <article class="metric-card">
+                        <span>Recommended Follow-up</span>
+                        <strong>{{ result.follow_up_window }}</strong>
+                    </article>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2>Clinical Measurements</h2>
+                <div class="card-grid">
+                    {% for vital in insights.vitals %}
+                    <article class="benchmark-card">
+                        <span>{{ vital.label }}</span>
+                        <strong>{{ vital.value }}</strong>
+                        <p>{{ vital.status }}</p>
+                    </article>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="section">
+                <h2>Clinical Observations</h2>
+                <div class="observation-list">
+                    {% for item in insights.observations %}
+                    <article class="observation-card">
+                        <strong>{{ item.title }}</strong>
+                        <p>{{ item.detail }}</p>
+                    </article>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="section">
+                <h2>Reference Benchmarks</h2>
+                <div class="card-grid">
+                    {% for benchmark in insights.benchmarks %}
+                    <article class="benchmark-card">
+                        <span>{{ benchmark.label }}</span>
+                        <strong>{{ benchmark.patient_value }} {{ benchmark.unit }}</strong>
+                        <p>
+                            {{ benchmark.difference }} {{ benchmark.unit }} {{ benchmark.direction }}
+                            dataset average of {{ benchmark.average }} {{ benchmark.unit }}
+                        </p>
+                        <p>{{ benchmark.percentile }}th percentile in the dataset benchmark view</p>
+                    </article>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="section">
+                <h2>Recommended Actions</h2>
+                <ul class="list-block">
+                    {% for item in insights.recommendations %}
+                    <li>{{ item }}</li>
+                    {% endfor %}
+                </ul>
+            </section>
+
+            <section class="section">
+                <h2>Clinical Notes</h2>
+                <p>{{ settings.reportNotes }}</p>
+            </section>
+        </main>
+
+        <footer class="report-footer">
+            <p>
+                This report is generated from the Heart Disease Detection System for screening support only.
+                It should be reviewed alongside symptoms, clinical judgment, and additional diagnostic evaluation.
+            </p>
+        </footer>
+    </div>
+</body>
+</html>
