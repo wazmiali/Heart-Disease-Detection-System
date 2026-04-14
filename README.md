@@ -25,16 +25,29 @@ This project aims to predict the likelihood of heart disease using machine learn
 ```
 📁 heart-disease-detection/
 │── app.py
-│── rf_classifier.pkl
-│── scaler.pkl
-│── templates/
-│   ├── index.html
-│   ├── result.html
-│── static/
-│   ├── styles.css
 │── requirements.txt
 │── README.md
-│── dataset.csv
+│
+├── model/
+│   ├── rf_classifier.pkl
+│   ├── scaler.pkl
+│
+├── data/
+│   ├── dataset.csv
+│
+├── templates/
+│   ├── index.html
+│   ├── result.html
+│
+├── static/
+│   ├── css/
+│   │   ├── styles.css
+│   ├── js/
+│   │   ├── app.js
+│   ├── images/
+│   │   ├── logo.png
+│
+└── .gitignore
 ```
 
 ### 🔧 How It Works
