@@ -20,6 +20,19 @@ This project aims to predict the likelihood of heart disease using machine learn
 * HTML / CSS / Bootstrap (Front-end)
 * Pickle (Model serialization)
 
+ ### Main Algorithm Used
+
+👉 Random Forest Classifier
+
+This is a machine learning classification algorithm
+It works by combining multiple decision trees (ensemble learning)
+It gives high accuracy and handles medical data well
+
+📌 Similar heart-disease projects also use Random Forest because:
+
+It handles multiple features (age, BP, cholesterol, etc.)
+Works well for binary classification (disease / no disease)
+
 ### 📂 Project Structure
 
 ```
